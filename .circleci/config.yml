@@ -13,7 +13,10 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [helloworld]
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -33,7 +36,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: [helloworld]
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
 
   lint:
     working_directory: ~/apps
@@ -42,7 +45,10 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [helloworld]      
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-   
       - run:
           name: Lint dockerfile
           command: |
@@ -51,8 +57,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: [helloworld]
-
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
 
   build-docker-image:
     working_directory: ~/apps
@@ -82,7 +87,10 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [helloworld]     
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-    
       - run:
           name: Deploy Docker Image to EKS Cluster
           command: |  
