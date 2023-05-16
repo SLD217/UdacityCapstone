@@ -34,34 +34,31 @@ jobs:
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
   build-docker-image:
+    ##https://circleci.com/blog/how-to-build-a-docker-image-on-circleci-2-0/
     working_directory: ~/apps
     docker:
-      - image: 'circleci/python:3.6.7-stretch'
+      - image: 'cimg/deploy:2023.05'
     steps:
       - checkout
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-   
+      - setup_remote_docker  
       - run:
-          name: Build and push Docker image
+          name: Build Docker image
           command: |
             # Step 1 - Build Docker Iamge
             docker build --tag=helloworld .
             # Step 2 - List docker images
             docker image ls
+      - run:
+          name: Push Docker image
+          command: |    
             # Step 3 - Push the Dockerfile
             dockerpath='mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}'
             echo "Docker ID and Image: $dockerpath"
-            docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD 
+            docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_PASSWORD" 
             ##N0rr1sDR1
             docker tag helloworld $dockerpath
             docker push $dockerpath
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
 
   deploy-application:
     working_directory: ~/apps
