@@ -95,7 +95,7 @@ workflows:
       - test-build:
       - build-docker-image:
           requires:
-            - lint
+            - test-build
       - deploy-application:
           requires: 
             - build-docker-image
