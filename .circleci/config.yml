@@ -52,7 +52,7 @@ jobs:
           name: Push Docker image
           command: |    
             # Step 3 - Push the Dockerfile
-            dockerpath='mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}'
+            dockerpath="mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}"
             echo "Docker ID and Image: $dockerpath"
             docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_PASSWORD" 
             ##N0rr1sDR1
