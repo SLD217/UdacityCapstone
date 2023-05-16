@@ -22,8 +22,8 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-        ## run the make file but currently nothing in the requirments file for this app
             make install
+            ## run the make file but currently nothing in the requirments file for this app
       - run:
           name: Lint dockerfile
           command: |
