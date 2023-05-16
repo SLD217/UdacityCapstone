@@ -32,8 +32,39 @@ The rubric has several criteria in the following categories:
 
 You must pay attention to the detail mentioned in the specification against each criterion. A good practice would be to review the rubric after each major development step and finally at the end of the development.
 
-### Step 1: Propose and Scope the Project
+### Propose and Scope the Project
 
 I will be using CircleCi for the continuous integration phase
-I plan to use Blue Green Deployment
-I will be using the "Hello World, my name is ..." application
+I plan to use rolling deployment approacj for the application
+I will be using the "Hello World, my name is ..." application which consists of 2 simple html pages and an image
+I have used cloud9 as the IDE
+I Have also made use of eksctl in conjunction with cloudformation to build the infrastructure
+My images can be found in [Dockerhub](https://hub.docker.com/r/mccowna/helloworld/tags)
+
+### Creating you own setup
+
+If you want to create you own version of this you can simply create the Cluser by running the script.  These utilise the eksctl tool with a config yml file to create the EKS enviroment
+    
+    ./infrastructure/allinfra.sh
+    
+and then setup kubernetes by running the script which creates a namespace, deploymentt and services required.  The URL can be found from the external-ip of the service on port 8000.
+
+    ./deploy/alleks.sh
+
+    [Application URL](http://a4de25aaf64ab48b9b1a8e372538268b-1325423513.eu-west-1.elb.amazonaws.com:8000/index.html)
+    
+You'll also need to add docker creditals to you CircleCI enviroment
+
+### for the submission there are a number of images required
+
+Images can be sound in the image file of the repo 
+
+1.  lint_fail - unsuccessful linting of the dockerfile
+2.  lint_pass - successful linting of the dockerfile
+3.  circleci_pass - successful deployment
+4.  Rolling Update - modified images running on the EKS cluster nodes
+5.  kubectl - kubectl command output showing that the deployment is successful, pods are running, and the service can be accessed via an external IP or port forwarding
+6.  Application - Screenshot showing that you can access the application after deployment
+
+
+

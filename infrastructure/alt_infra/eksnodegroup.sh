@@ -1,0 +1,1 @@
+aws cloudformation create-stack --stack-name EKSnodegroup --template-body file://eksnodegroup.yml --parameters file://eksnodegroup.json --region=eu-west-1 --capabilities CAPABILITY_NAMED_IAM

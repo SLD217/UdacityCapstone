@@ -7,7 +7,7 @@
 # Create dockerpath
 # dockerpath=<your docker ID/path>
 
-dockerpath='mccowna/helloworld:v1.0.0'
+dockerpath='mccowna/helloworld:v1.0.1'
 
 # Step 2:  
 # Authenticate & tag

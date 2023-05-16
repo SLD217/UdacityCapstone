@@ -1,0 +1,14 @@
+[
+	{
+		"ParameterKey": "MaxSize",
+		"ParameterValue": "4"
+	},
+	{
+		"ParameterKey": "DesiredCapacity",
+		"ParameterValue": "3"
+	},
+	{
+		"ParameterKey": "MinSize",
+		"ParameterValue": "1"
+	}
+]

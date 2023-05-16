@@ -1,0 +1,10 @@
+[
+	{
+		"ParameterKey": "EKSUserName",
+		"ParameterValue": "CapstoneEKSUser"
+	},
+	{
+		"ParameterKey": "EKSRoleName",
+		"ParameterValue": "CapstoneEKSRole"
+	}
+]

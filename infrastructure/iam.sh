@@ -1,0 +1,1 @@
+aws cloudformation create-stack --stack-name EKSiam --template-body file://iam.yml --parameters file://iam.json --region=eu-west-1 --capabilities CAPABILITY_NAMED_IAM
