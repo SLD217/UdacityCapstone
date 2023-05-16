@@ -91,7 +91,7 @@ jobs:
 workflows:
   updateapp:
     jobs:
-      - test-build:
+      - test-build
       - build-docker-image:
           requires:
             - test-build
