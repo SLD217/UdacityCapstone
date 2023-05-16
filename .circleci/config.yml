@@ -1,0 +1,104 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2.1
+
+jobs:
+
+  setup:
+    working_directory: ~/apps
+    docker:
+      - image: 'cimg/deploy:2023.05'
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [helloworld]
+      - run:
+          name: Install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            ## run the make file but currently nothing reuqired for this app
+            make install
+            ## Install hadolint to check the Dockerfile
+              wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
+              chmod +x /bin/hadolint
+            ## Install Ku
+              curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.2/2023-03-17/bin/linux/amd64/kubectl
+            	chmod +x ./kubectl
+            	mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+            	echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+            	kubectl version --short --client
+      - save_cache:
+          paths:
+            - ./venv
+          key: [helloworld]
+
+  lint:
+    working_directory: ~/apps
+    docker:
+      - image: 'cimg/deploy:2023.05'
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [helloworld]      
+      - run:
+          name: Lint dockerfile
+          command: |
+            . venv/bin/activate
+            make lint
+      - save_cache:
+          paths:
+            - ./venv
+          key: [helloworld]
+
+
+  build-docker-image:
+    working_directory: ~/apps
+    docker:
+      - image: 'cimg/deploy:2023.05'
+    steps:
+      - checkout
+      - run:
+          name: Build and push Docker image
+          command: |
+            # Step 1 - Build Docker Iamge
+            docker build --tag=helloworld .
+            # Step 2 - List docker images
+            docker image ls
+            # Step 3 - Push the Dockerfile
+            dockerpath='mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}'
+            echo "Docker ID and Image: $dockerpath"
+            docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD 
+            ##N0rr1sDR1
+            docker tag helloworld $dockerpath
+            docker push $dockerpath
+
+  deploy-application:
+    working_directory: ~/apps
+    docker:
+      - image: 'cimg/deploy:2023.05'
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [helloworld]     
+      - run:
+          name: Deploy Docker Image to EKS Cluster
+          command: |  
+            
+            kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld
+            
+workflows:
+  updateapp:
+    jobs:
+      - setup
+      - lint:
+          requires:
+            - setup
+      - build-docker-image:
+          requires:
+            - lint
+      - deploy-application:
+          requires: 
+            - build-docker-image
