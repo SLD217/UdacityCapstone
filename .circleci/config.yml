@@ -4,6 +4,9 @@
 #
 version: 2.1
 
+orbs:
+  aws-eks: circleci/aws-eks@2.2.0
+
 jobs:
 
   test-build:
@@ -81,7 +84,7 @@ jobs:
             echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
             kubectl version --short --client
             ## Promote code
-            kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld
+            kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld -profile CapstoneEKSUser
             ##Check Status
             kubectl get all -n helloworld
       - save_cache:

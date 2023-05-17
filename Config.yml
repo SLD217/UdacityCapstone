@@ -1,0 +1,230 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2.1
+
+orbs:
+  aws-eks: circleci/aws-eks@2.2.0
+
+jobs:
+
+  test-build:
+    working_directory: ~/apps
+    docker:
+      - image: 'circleci/python:3.6.7-stretch'
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run:
+          name: Install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            make install
+      - run:
+          name: Lint dockerfile
+          command: |
+            . venv/bin/activate
+            make lint
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+  build-docker-image:
+    ##https://circleci.com/blog/how-to-build-a-docker-image-on-circleci-2-0/
+    working_directory: ~/apps
+    docker:
+      - image: 'cimg/deploy:2023.05'
+    steps:
+      - checkout
+      - setup_remote_docker  
+      - run:
+          name: Build Docker image
+          command: |
+            # Step 1 - Build Docker Iamge
+            docker build --tag=helloworld .
+            # Step 2 - List docker images
+            docker image ls
+      - run:
+          name: Push Docker image
+          command: |    
+            # Step 3 - Push the Dockerfile
+            dockerpath="mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}"
+            echo "Docker ID and Image: $dockerpath"
+            docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_PASSWORD" 
+            ##N0rr1sDR1
+            docker tag helloworld $dockerpath
+            docker push $dockerpath
+            ##add a comment
+
+  deploy-application:
+    docker:
+      - image: cimg/python:3.10
+    parameters:
+      cluster-name:
+        description: |
+          Capstone
+        type: string
+        
+    
+    steps:
+      - kubernetes/install:
+          kubectl-version: v1.22.0
+
+
+  deploy-application1:
+    working_directory: ~/apps
+    docker:
+      - image: 'circleci/python:3.6.7-stretch'
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-   
+      - run:
+          name: Deploy Docker Image to EKS Cluster
+          command: |
+            ## install kunectl
+            curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.25.7/2023-03-17/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+            echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+            kubectl version --short --client
+            ## Promote code
+            kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld
+            ##Check Status
+            kubectl get all -n helloworld
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+            
+workflows:
+  updateapp:
+    jobs:
+      - test-build
+      - build-docker-image:
+          requires:
+            - test-build
+      - deploy-application:
+          requires: 
+            - build-docker-image
+
+
+description: |
+  Updates the container image(s) of a resource on EKS.
+docker:
+  - image: cimg/python:<<parameters.tag>>
+parameters:
+  authenticator-release-tag:
+    default: ''
+    description: |
+      Specifies which release-tag version of the authenticator to install.
+    type: string
+  aws-profile:
+    default: ''
+    description: |
+      The AWS profile to be used. If not specified, the configured default
+      profile for your AWS CLI installation will be used.
+    type: string
+  aws-region:
+    default: ''
+    description: |
+      AWS region that the EKS cluster is in.
+    type: string
+  cluster-name:
+    description: |
+      The name of the EKS cluster.
+    type: string
+  container-image-updates:
+    description: |
+      Specify a list of container image updates
+      (space-delimited name value pairs in the form
+      CONTAINER_NAME_1=CONTAINER_IMAGE_1 ... CONTAINER_NAME_N=CONTAINER_IMAGE_N)
+      to be applied to the resource via `kubectl set image`.
+      e.g. "busybox=busybox nginx=nginx:1.9.1"
+    type: string
+  get-rollout-status:
+    default: false
+    description: |
+      Get the status of the rollout.
+      This can only be used for resource types that are valid
+      for usage with `kubectl rollout` subcommands.
+    type: boolean
+  kubectl-version:
+    default: v1.22.0
+    description: |
+      Version of kubectl to install
+    type: string
+  namespace:
+    default: ''
+    description: |
+      The kubernetes namespace that should be used.
+    type: string
+  pinned-revision-to-watch:
+    default: ''
+    description: |
+      Pin a specific revision to be watched and abort watching if it is rolled
+      over by another revision.
+      Only effective if get-rollout-status is set to true.
+    type: string
+  resource-name:
+    default: ''
+    description: |
+      Resource name in the format TYPE/NAME e.g. deployment/nginx-deployment
+      Either resource-file-path or resource-name need to be specified.
+      This is required if get-rollout-status is set to true.
+    type: string
+  show-kubectl-command:
+    default: false
+    description: |
+      Whether to show the kubectl command used.
+    type: boolean
+  tag:
+    default: '3.10'
+    description: |
+      Version of the CircleCI Python convenience image to use. For full list,
+      see https://hub.docker.com/r/cimg/python/tags
+      A version of Python supported by the AWS CLI is required.
+    type: string
+  watch-rollout-status:
+    default: true
+    description: |
+      Whether to watch the status of the latest rollout until it's done.
+      Only effective if get-rollout-status is set to true.
+    type: boolean
+  watch-timeout:
+    default: ''
+    description: >
+      The length of time to wait before ending the watch, zero means never.
+
+      Any other values should contain a corresponding time unit (e.g. 1s, 2m,
+      3h).
+
+      Only effective if get-rollout-status is set to true.
+    type: string
+steps:
+  - update-kubeconfig-with-authenticator:
+      authenticator-release-tag: << parameters.authenticator-release-tag >>
+      aws-profile: << parameters.aws-profile >>
+      aws-region: << parameters.aws-region >>
+      cluster-name: << parameters.cluster-name >>
+      install-kubectl: true
+      kubectl-version: << parameters.kubectl-version >>
+  - kubernetes/update-container-image:
+      container-image-updates: << parameters.container-image-updates >>
+      get-rollout-status: << parameters.get-rollout-status >>
+      namespace: << parameters.namespace >>
+      pinned-revision-to-watch: << parameters.pinned-revision-to-watch >>
+      resource-name: << parameters.resource-name >>
+      show-kubectl-command: << parameters.show-kubectl-command >>
+      watch-rollout-status: << parameters.watch-rollout-status >>
+      watch-timeout: << parameters.watch-timeout >>
