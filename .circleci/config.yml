@@ -58,7 +58,6 @@ jobs:
             dockerpath="mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7}"
             echo "Docker ID and Image: $dockerpath"
             docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_PASSWORD" 
-            ##N0rr1sDR1
             docker tag helloworld $dockerpath
             docker push $dockerpath
             ##add a comment
@@ -84,7 +83,7 @@ jobs:
             echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
             kubectl version --short --client
             ## Promote code
-            ##kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld -profile CapstoneEKSUser
+            kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld -profile CapstoneEKSUser
             ##Check Status
             kubectl get all -n helloworld
       - save_cache:
