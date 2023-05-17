@@ -65,7 +65,7 @@ jobs:
   deploy-application:
     working_directory: ~/apps
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/python:3.7
     steps:
       - checkout
       - restore_cache:
