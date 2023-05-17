@@ -72,17 +72,18 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-   
       - run:
-          name: install dependencies
+          name: Deploy Docker Image to EKS Cluster
           command: |
+            ## install kunectl
             curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.2/2023-03-17/bin/linux/amd64/kubectl
             chmod +x ./kubectl
             mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
             echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
             kubectl version --short --client
-      - run:
-          name: Deploy Docker Image to EKS Cluster
-          command: |  
+            ## Promote code
             kubectl set image deployments/helloworld-app-deployment helloworld-app-deployment=mccowna/helloworld:${CIRCLE_WORKFLOW_ID:0:7} -n helloworld
+            ##Check Status
+            kubectl get all -n helloworld
       - save_cache:
           paths:
             - ./venv
